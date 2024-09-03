@@ -2,6 +2,70 @@
 // testar
 
 
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "Tenda_4638F8";
+const char* password = "m6R2A6Rq";
+
+// Coordenadas de Popayán, Colombia
+// const float latitude = 2.43823;
+// const float longitude = -76.61316;
+const float latitude = 2.446635;
+const float longitude = -76.632958;
+
+const char* apiKey = "c373112c8c37e3facd9be6fbeeb8f2cd";
+
+// Construir la URL completa con las coordenadas
+String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(latitude, 5) + "&lon=" + String(longitude, 5) + "&appid=" + String(apiKey) + "&units=metric";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+
+  Serial.print("Conectando a WiFi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(" Conectado!");
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+
+    http.begin(url);  // Inicia la conexión HTTP
+    int httpCode = http.GET();  // Realiza la solicitud GET
+
+    if (httpCode > 0) {  // Verifica si la solicitud fue exitosa
+      String payload = http.getString();  // Obtiene la respuesta en formato String
+
+      // Procesar la respuesta JSON
+      StaticJsonDocument<1024> doc;
+      DeserializationError error = deserializeJson(doc, payload);
+
+      if (!error) {
+        float temperature = doc["main"]["temp"];
+        float humidity = doc["main"]["humidity"];
+        const char* weatherDescription = doc["weather"][0]["description"];
+
+        Serial.println("Temperatura: " + String(temperature) + "°C");
+        Serial.println("Humedad: " + String(humidity) + "%");
+        Serial.println("Clima: " + String(weatherDescription));
+      } else {
+        Serial.println("Error al analizar el JSON");
+      }
+    } else {
+      Serial.println("Error en la solicitud HTTP: " + String(httpCode));
+    }
+
+    http.end();  // Finaliza la conexión
+  }
+}
+
+void loop() {
+  // Puedes repetir la solicitud o realizar otras tareas
+}
 
 
 
