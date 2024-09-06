@@ -154,69 +154,6 @@ void POSTData(StaticJsonDocument<600>& payload) {
   }
 }
 
-/* // void checkMachineState() {
-//   if (WiFi.status() == WL_CONNECTED) {
-//     HTTPClient http;
-
-//     http.begin(serverNameStatus);
-//     int httpResponseCode = http.GET();
-
-//     if (httpResponseCode > 0) {
-//       String response = http.getString();
-//       Serial.println("Estado de la máquina recibido:");
-//       Serial.println(response);
-
-//       // Parsear la respuesta JSON
-//       DynamicJsonDocument doc(1024);
-//       deserializeJson(doc, response);
-
-//       String estadoMaquina = doc["estado"]; // Cambiado de "maquinaEncendida" a "estado"
-//       String horaApagado = doc["horaApagado"];
-
-//       // Imprimir los valores recibidos
-//       Serial.print("Estado de la máquina: ");
-//       Serial.println(estadoMaquina);
-//       Serial.print("Hora de apagado: ");
-//       Serial.println(horaApagado);
-
-//       // Controlar el LED según el estado recibido
-//       if (estadoMaquina == "on") {
-//         digitalWrite(ledMaquina, HIGH);
-//       } else if (estadoMaquina == "off") {
-//         digitalWrite(ledMaquina, LOW);
-//       } else {
-//         Serial.println("Estado de la máquina no reconocido.");
-//       }
-
-//       // Verificar la hora actual y compararla con la hora de apagado
-//       if (horaApagado.length() > 0) {
-//         time_t now = getTime();
-//         struct tm timeinfo;
-//         localtime_r(&now, &timeinfo);
-
-//         int currentHour = timeinfo.tm_hour;
-//         int currentMinute = timeinfo.tm_min;
-
-//         int apagadoHour, apagadoMinute;
-//         sscanf(horaApagado.c_str(), "%d:%d", &apagadoHour, &apagadoMinute);
-
-//         if (currentHour == apagadoHour && currentMinute == apagadoMinute) {
-//           // Apagar la máquina si la hora actual es igual a la hora de apagado
-//           digitalWrite(ledMaquina, LOW);
-//           Serial.println("Máquina apagada según hora programada.");
-//         }
-//       }
-//     } else {
-//       Serial.print("Error al recibir el estado de la máquina. Código de respuesta: ");
-//       Serial.println(httpResponseCode);
-//     }
-
-//     http.end();
-//   }
-// } */
-
-
-// = funciona con booleanos, servira para mas tarde
 void checkMachineState() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
