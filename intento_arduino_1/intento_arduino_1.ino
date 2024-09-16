@@ -1,277 +1,287 @@
 // funcionalidades con seguimiento
-// testeando
+// testeado
 
-// prueva con grimoire
-// #include <WiFi.h>
-// #include <WebServer.h>
-// #include <DHTesp.h>
-// #include <ArduinoJson.h>
-// #include <HTTPClient.h>
-// #include "time.h"
+//prueva con grimoire
 
-// // Credenciales WiFi
-// const char* ssid = "BUSCANDO RED 2";
-// const char* password = "Rafael1061773978";
+#include <WiFi.h>
+#include <WebServer.h>
+#include <DHTesp.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h>
+#include "time.h"
 
-// WebServer server(80);
+// Credenciales WiFi
+const char* ssid = "maaa";
+const char* password = "123456789";
+// const char* ssid = "Tenda_4638F8";
+// const char* password = "m6R2A6Rq";
 
-// // Definir pines
-// const int ledMaquina = 2;
-// const int DHTPIN = 15;             // Pin donde está conectado el sensor DHT11
-// DHTesp dht;
+WebServer server(80);
 
-// unsigned long lastDataMillis = 0;    // Última vez que se enviaron datos
-// unsigned long lastStateMillis = 0;   // Última vez que se verificó el estado de la máquina
+// Definir pines
+const int ledMaquina = 2;
+const int DHTPIN = 15;             // Pin donde está conectado el sensor DHT11
+DHTesp dht;
 
-// const char* ntpServer = "pool.ntp.org";
-// const char* serverNameData = "https://us-east-1.aws.data.mongodb-api.com/app/data-ndbugol/endpoint/data/v1/action/insertOne";  // URL de la API de MongoDB Data
-// const char* serverNameStatus = "https://bakend-arduino.onrender.com/api/estado";  // URL del backend para obtener el estado de la máquina
+unsigned long lastDataMillis = 0;    // Última vez que se enviaron datos
+unsigned long lastStateMillis = 0;   // Última vez que se verificó el estado de la máquina
 
-// // Nueva URL completa para obtener el seguimiento_id
-// const String backendSeguimientoURL = "https://proyecto-sena-backend-s666.onrender.com/api/seguimiento/maquina/66def6b4380c4b694df72013";
+const char* ntpServer = "pool.ntp.org";
+const char* serverNameData = "https://us-east-1.aws.data.mongodb-api.com/app/data-ndbugol/endpoint/data/v1/action/insertOne";  // URL de la API de MongoDB Data
+const char* serverNameStatus = "https://bakend-arduino.onrender.com/api/estado";  // URL del backend para obtener el estado de la máquina
 
-// // Nombre de la base de datos y colección en MongoDB Atlas
-// const char* databaseName = "datos_de_arduino";
-// const char* collectionName = "datos";
+// Base de la URL del backend para obtener el seguimiento
+const String backendSeguimientoBaseURL = "https://proyecto-sena-backend-s666.onrender.com/api/seguimiento/maquina/";
+// Variable quemada para el ID de la máquina
+const String idMaquina = "66ba25c376b1aba0f6ef93cc";  // ID de la máquina
 
-// // Documento JSON
-// StaticJsonDocument<500> doc;
+// Nombre de la base de datos y colección en MongoDB Atlas
+const char* databaseName = "datos_de_arduino";
+const char* collectionName = "datos";
 
-// // Variables para API del clima
-// const float latitude = 2.446635;
-// const float longitude = -76.632958;
-// const char* apiKey = "c373112c8c37e3facd9be6fbeeb8f2cd";
-// float tempAmbiente = 0.0;  // Variable para almacenar la temperatura ambiente
+// Documento JSON
+StaticJsonDocument<500> doc;
 
-// // Variable para el seguimiento_id
-// String seguimientoID = "";  // Variable para almacenar el seguimiento_id
+// Variables para API del clima
+const float latitude = 2.446635;
+const float longitude = -76.632958;
+const char* apiKey = "c373112c8c37e3facd9be6fbeeb8f2cd";
+float tempAmbiente = 0.0;  // Variable para almacenar la temperatura ambiente
 
-// void setup() {
-//   pinMode(ledMaquina, OUTPUT);
+// Variable para el seguimiento_id
+String seguimientoID = "";  // Variable para almacenar el seguimiento_id
 
-//   Serial.begin(115200);
-//   Serial.println("Conectando al WiFi...");
-//   Serial.println(ssid);
+void setup() {
+  pinMode(ledMaquina, OUTPUT);
 
-//   WiFi.mode(WIFI_STA);
-//   WiFi.begin(ssid, password);
-//   Serial.println("");
+  Serial.begin(115200);
+  Serial.println("Conectando al WiFi...");
+  Serial.println(ssid);
 
-//   while (WiFi.status() != WL_CONNECTED) {
-//     delay(500);
-//     Serial.print(".");
-//   }
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
 
-//   Serial.println("");
-//   Serial.print("Conectado a la red ");
-//   Serial.println(ssid);
-//   Serial.print("Conectado con IP: ");
-//   Serial.println(WiFi.localIP());
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
-//   dht.setup(DHTPIN, DHTesp::DHT11);
-//   configTime(0, 0, ntpServer);
-// }
+  Serial.println("");
+  Serial.print("Conectado a la red ");
+  Serial.println(ssid);
+  Serial.print("Conectado con IP: ");
+  Serial.println(WiFi.localIP());
 
-// void loop() {
-//   unsigned long currentMillis = millis();
+  dht.setup(DHTPIN, DHTesp::DHT11);
+  configTime(0, 0, ntpServer);
+}
 
-//   // Verificar estado de la máquina cada 5 segundos
-//   if (currentMillis - lastStateMillis >= 5000) {
-//     lastStateMillis = currentMillis;
-//     checkMachineState();
-//   }
+void loop() {
+  unsigned long currentMillis = millis();
 
-//   // Enviar datos cada 15 segundos si el LED está encendido
-//   if (digitalRead(ledMaquina) == HIGH) {
-//     if (currentMillis - lastDataMillis >= 15000 || lastDataMillis == 0) {
-//       lastDataMillis = currentMillis;
+  // Verificar estado de la máquina cada 5 segundos
+  if (currentMillis - lastStateMillis >= 5000) {
+    lastStateMillis = currentMillis;
+    checkMachineState();
+  }
 
-//       // Obtener el seguimiento_id desde la nueva URL
-//       getSeguimientoID();
+  // Enviar datos cada 15 segundos si el LED está encendido
+  if (digitalRead(ledMaquina) == HIGH) {
+    if (currentMillis - lastDataMillis >= 15000 || lastDataMillis == 0) {
+      lastDataMillis = currentMillis;
 
-//       // Obtener la temperatura ambiente desde la API del clima
-//       getClimaAPI();
+      // Obtener el seguimiento_id usando el id de la máquina
+      getSeguimientoID();
 
-//       unsigned long epochtime = getTime();
-//       Serial.print("Epoch time: ");
-//       Serial.println(epochtime);
+      // Obtener la temperatura ambiente desde la API del clima
+      getClimaAPI();
 
-//       TempAndHumidity data = dht.getTempAndHumidity();
+      unsigned long epochtime = getTime();
+      Serial.print("Epoch time: ");
+      Serial.println(epochtime);
 
-//       Serial.print("Temperatura DHT11: ");
-//       Serial.print(data.temperature);
-//       Serial.print(" °C\nHumedad: ");
-//       Serial.print(data.humidity);
-//       Serial.println(" %");
+      TempAndHumidity data = dht.getTempAndHumidity();
 
-//       // Redondear temperatura a dos decimales
-//       float temperaturaRedondeada = round(data.temperature * 100.0) / 100.0;
+      Serial.print("Temperatura DHT11: ");
+      Serial.print(data.temperature);
+      Serial.print(" °C\nHumedad: ");
+      Serial.print(data.humidity);
+      Serial.println(" %");
 
-//       doc.clear();
-//       JsonObject docObject = doc.to<JsonObject>();
-//       docObject["temperatura"] = temperaturaRedondeada;
-//       docObject["temperaturaAmbiente"] = tempAmbiente;  // Agregar temperatura ambiente al JSON
-//       docObject["humedad"] = data.humidity;
-//       docObject["timestamp"] = epochtime;
-//       docObject["seguimiento_id"] = seguimientoID;  // Agregar el seguimiento_id al JSON
+      // Redondear temperatura a dos decimales
+      float temperaturaRedondeada = round(data.temperature * 100.0) / 100.0;
 
-//       StaticJsonDocument<600> payload;
-//       payload["dataSource"] = "Cluster0";
-//       payload["database"] = databaseName;
-//       payload["collection"] = collectionName;
-//       payload["document"] = docObject;
+      doc.clear();
+      JsonObject docObject = doc.to<JsonObject>();
+      docObject["temperatura"] = temperaturaRedondeada;
+      docObject["temperaturaAmbiente"] = tempAmbiente;  // Agregar temperatura ambiente al JSON
+      docObject["humedad"] = data.humidity;
+      docObject["timestamp"] = epochtime;
+      docObject["seguimiento_id"] = seguimientoID;  // Agregar el seguimiento_id al JSON
 
-//       Serial.println("Actualizando datos...");
-//       POSTData(payload);
-//     }
-//   }
-// }
+      StaticJsonDocument<600> payload;
+      payload["dataSource"] = "Cluster0";
+      payload["database"] = databaseName;
+      payload["collection"] = collectionName;
+      payload["document"] = docObject;
 
-// // Función para obtener la temperatura ambiente de la API del clima
-// void getClimaAPI() {
-//   if (WiFi.status() == WL_CONNECTED) {
-//     HTTPClient http;
-//     String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(latitude, 5) + "&lon=" + String(longitude, 5) + "&appid=" + String(apiKey) + "&units=metric";
+      Serial.println("Actualizando datos...");
+      POSTData(payload);
+    }
+  }
+}
 
-//     http.begin(url);  // Inicia la conexión HTTP
-//     int httpCode = http.GET();  // Realiza la solicitud GET
+// Función para obtener la temperatura ambiente de la API del clima
+void getClimaAPI() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(latitude, 5) + "&lon=" + String(longitude, 5) + "&appid=" + String(apiKey) + "&units=metric";
 
-//     if (httpCode > 0) {  // Verifica si la solicitud fue exitosa
-//       String payload = http.getString();  // Obtiene la respuesta en formato String
+    http.begin(url);  // Inicia la conexión HTTP
+    int httpCode = http.GET();  // Realiza la solicitud GET
 
-//       // Procesar la respuesta JSON
-//       StaticJsonDocument<1024> doc;
-//       DeserializationError error = deserializeJson(doc, payload);
+    if (httpCode > 0) {  // Verifica si la solicitud fue exitosa
+      String payload = http.getString();  // Obtiene la respuesta en formato String
 
-//       if (!error) {
-//         tempAmbiente = doc["main"]["temp"];  // Guardar la temperatura ambiente
-//         Serial.println("Temperatura ambiente: " + String(tempAmbiente) + "°C");
-//       } else {
-//         Serial.println("Error al analizar el JSON del clima");
-//       }
-//     } else {
-//       Serial.println("Error en la solicitud HTTP de clima: " + String(httpCode));
-//     }
+      // Procesar la respuesta JSON
+      StaticJsonDocument<1024> doc;
+      DeserializationError error = deserializeJson(doc, payload);
 
-//     http.end();  // Finaliza la conexión
-//   }
-// }
+      if (!error) {
+        tempAmbiente = doc["main"]["temp"];  // Guardar la temperatura ambiente
+        Serial.println("Temperatura ambiente: " + String(tempAmbiente) + "°C");
+      } else {
+        Serial.println("Error al analizar el JSON del clima");
+      }
+    } else {
+      Serial.println("Error en la solicitud HTTP de clima: " + String(httpCode));
+    }
 
-// // Función para obtener el seguimiento_id del backend desde la nueva URL
-// void getSeguimientoID() {
-//   if (WiFi.status() == WL_CONNECTED) {
-//     HTTPClient http;
-//     String url = backendSeguimientoURL;  // Usar la URL fija proporcionada
+    http.end();  // Finaliza la conexión
+  }
+}
 
-//     http.begin(url);  // Inicia la conexión HTTP
-//     int httpCode = http.GET();  // Realiza la solicitud GET
+// Función para obtener el seguimiento_id del backend usando el id de la máquina
+void getSeguimientoID() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    // Construir la URL concatenando la base y el idMaquina
+    String url = backendSeguimientoBaseURL + idMaquina;
 
-//     if (httpCode > 0) {  // Verifica si la solicitud fue exitosa
-//       String payload = http.getString();  // Obtiene la respuesta en formato String
+    http.begin(url);  // Inicia la conexión HTTP
+    int httpCode = http.GET();  // Realiza la solicitud GET
 
-//       // Procesar la respuesta JSON
-//       StaticJsonDocument<1024> doc;
-//       DeserializationError error = deserializeJson(doc, payload);
+    if (httpCode > 0) {  // Verifica si la solicitud fue exitosa
+      String payload = http.getString();  // Obtiene la respuesta en formato String
 
-//       if (!error) {
-//         seguimientoID = doc["seguimiento_id"].as<String>();  // Guardar el seguimiento_id
-//         Serial.println("Seguimiento ID: " + seguimientoID);
-//       } else {
-//         Serial.println("Error al analizar el JSON de seguimiento");
-//       }
-//     } else {
-//       Serial.println("Error en la solicitud HTTP de seguimiento: " + String(httpCode));
-//     }
+      // Procesar la respuesta JSON
+      StaticJsonDocument<1024> doc;
+      DeserializationError error = deserializeJson(doc, payload);
 
-//     http.end();  // Finaliza la conexión
-//   }
-// }
+      if (!error) {
+        seguimientoID = doc["data"]["_id"].as<String>();
+        // seguimientoID = doc["_id"].as<String>();  // Guardar el seguimiento_id (error)
+        Serial.println("Seguimiento ID: " + seguimientoID);
+      } else {
+        Serial.println("Error al analizar el JSON de seguimiento");
+      }
+    } else {
+      Serial.println("Error en la solicitud HTTP de seguimiento: " + String(httpCode));
+    }
 
-// unsigned long getTime() {
-//   time_t now;
-//   struct tm timeinfo;
-//   if (!getLocalTime(&timeinfo)) {
-//     return 0;
-//   }
-//   time(&now);
-//   return now;
-// }
+    http.end();  // Finaliza la conexión
+  }
+}
 
-// void POSTData(StaticJsonDocument<600>& payload) {
-//   if (WiFi.status() == WL_CONNECTED) {
-//     HTTPClient http;
+unsigned long getTime() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    return 0;
+  }
+  time(&now);
+  return now;
+}
 
-//     http.begin(serverNameData);
-//     http.addHeader("Content-Type", "application/json");
-//     http.addHeader("api-key", "WD0PmvqccnHxPYc4YEsOK3hryZAN6fca4glv0XLQTaMeAZID4Yh4zGZQNpiXEdsz");
+void POSTData(StaticJsonDocument<600>& payload) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
 
-//     // Construir el JSON con los datos
-//     String json;
-//     serializeJson(payload, json);
+    http.begin(serverNameData);
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("api-key", "WD0PmvqccnHxPYc4YEsOK3hryZAN6fca4glv0XLQTaMeAZID4Yh4zGZQNpiXEdsz");
 
-//     Serial.print("JSON a enviar: ");
-//     Serial.println(json);
+    // Construir el JSON con los datos
+    String json;
+    serializeJson(payload, json);
 
-//     int httpResponseCode = http.POST(json);
-//     Serial.print("Código de respuesta HTTP: ");
-//     Serial.println(httpResponseCode);
+    Serial.print("JSON a enviar: ");
+    Serial.println(json);
 
-//     // Leer la respuesta del servidor para obtener más detalles
-//     String response = http.getString();
-//     Serial.print("Respuesta del servidor: ");
-//     Serial.println(response);
+    int httpResponseCode = http.POST(json);
+    Serial.print("Código de respuesta HTTP: ");
+    Serial.println(httpResponseCode);
 
-//     if (httpResponseCode == 201) { // 201 significa que se creó el recurso (documento)
-//       Serial.println("Datos subidos correctamente.");
-//       // Agregar aquí la lógica para indicar éxito en la operación
-//     } else {
-//       Serial.print("Error al subir los datos. Código de respuesta: ");
-//       Serial.println(httpResponseCode);
-//     }
+    // Leer la respuesta del servidor para obtener más detalles
+    String response = http.getString();
+    Serial.print("Respuesta del servidor: ");
+    Serial.println(response);
 
-//     http.end();
-//   }
-// }
+    if (httpResponseCode == 201) { // 201 significa que se creó el recurso (documento)
+      Serial.println("Datos subidos correctamente.");
+    } else {
+      Serial.print("Error al subir los datos. Código de respuesta: ");
+      Serial.println(httpResponseCode);
+    }
 
-// void checkMachineState() {
-//   if (WiFi.status() == WL_CONNECTED) {
-//     HTTPClient http;
+    http.end();
+  }
+}
 
-//     http.begin(serverNameStatus);
-//     int httpResponseCode = http.GET();
+void checkMachineState() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
 
-//     if (httpResponseCode > 0) {
-//       String response = http.getString();
-//       Serial.println("Estado de la máquina recibido:");
-//       Serial.println(response);
+    http.begin(serverNameStatus);
+    int httpResponseCode = http.GET();
 
-//       // Parsear la respuesta JSON
-//       DynamicJsonDocument doc(1024);
-//       deserializeJson(doc, response);
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println("Estado de la máquina recibido:");
+      Serial.println(response);
 
-//       bool maquinaEncendida = doc["maquinaEncendida"];
-//       String horaApagado = doc["horaApagado"];
+      // Parsear la respuesta JSON
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, response);
 
-//       // Imprimir los valores recibidos
-//       Serial.print("Máquina encendida: ");
-//       Serial.println(maquinaEncendida);
-//       Serial.print("Hora de apagado: ");
-//       Serial.println(horaApagado);
+      bool maquinaEncendida = doc["maquinaEncendida"];
+      String horaApagado = doc["horaApagado"];
 
-//       // Controlar el LED según el estado recibido
-//       if (maquinaEncendida) {
-//         digitalWrite(ledMaquina, HIGH);
-//       } else {
-//         digitalWrite(ledMaquina, LOW);
-//       }
-//     } else {
-//       Serial.print("Error al recibir el estado de la máquina. Código de respuesta: ");
-//       Serial.println(httpResponseCode);
-//     }
+      // Imprimir los valores recibidos
+      Serial.print("Máquina encendida: ");
+      Serial.println(maquinaEncendida);
+      Serial.print("Hora de apagado: ");
+      Serial.println(horaApagado);
 
-//     http.end();
-//   }
-// }
+      // Controlar el LED según el estado recibido
+      if (maquinaEncendida) {
+        digitalWrite(ledMaquina, HIGH);
+      } else {
+        digitalWrite(ledMaquina, LOW);
+      }
+    } else {
+      Serial.print("Error al recibir el estado de la máquina. Código de respuesta: ");
+      Serial.println(httpResponseCode);
+    }
+
+    http.end();
+  }
+}
+
+
+// =============================================================// =============================================================
 
 
 // fusion de consumo de api de clima y comunicacion con el backend
